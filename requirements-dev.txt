@@ -1,0 +1,2 @@
+-r requirements-mlx.txt
+pytest

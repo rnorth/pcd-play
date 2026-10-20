@@ -1,0 +1,114 @@
+{
+  "is_fraudulent": {
+    "value": true,
+    "prob": 0.9536
+  },
+  "risk_tier": {
+    "value": "HIGH",
+    "prob": 0.7441
+  },
+  "recommended_action": {
+    "value": "MANUAL_REVIEW",
+    "prob": 0.5088
+  },
+  "primary_anomaly": {
+    "value": "TOR_EXIT_NODE",
+    "prob": 0.8875
+  },
+  "secondary_anomaly": {
+    "value": "CARD_NOT_PRESENT",
+    "prob": 0.9544
+  },
+  "requires_human_escalation": {
+    "value": true,
+    "prob": 0.9543
+  },
+  "can_auto_block": {
+    "value": true,
+    "prob": 0.6893
+  },
+  "aml_sar_filing_required": {
+    "value": true,
+    "prob": 0.8984
+  },
+  "fincen_flag_threshold": {
+    "value": true,
+    "prob": 0.8895
+  },
+  "sanctions_screening_risk": {
+    "value": "HIGH_CONFIDENCE_MATCH",
+    "prob": 0.6387
+  },
+  "tor_exit_node_detected": {
+    "value": true,
+    "prob": 0.9986
+  },
+  "device_fingerprint_mismatch": {
+    "value": true,
+    "prob": 0.9709
+  },
+  "velocity_score": {
+    "value": "NORMAL",
+    "prob": 0.4374
+  },
+  "block_card_immediately": {
+    "value": true,
+    "prob": 0.8256
+  },
+  "freeze_online_banking": {
+    "value": true,
+    "prob": 0.9508
+  },
+  "notify_cardholder_sms": {
+    "value": true,
+    "prob": 0.8732
+  },
+  "notify_cardholder_email": {
+    "value": true,
+    "prob": 0.7178
+  },
+  "requires_identity_verification": {
+    "value": true,
+    "prob": 0.7994
+  },
+  "merchant_category_risk": {
+    "value": "HIGH_RISK_CRYPTO",
+    "prob": 0.836
+  },
+  "chargeback_probability": {
+    "value": "LOW",
+    "prob": 0.7082
+  },
+  "counterparty_jurisdiction_risk": {
+    "value": "TIER_3_HIGH",
+    "prob": 0.4374
+  },
+  "auto_reverse_transfer": {
+    "value": true,
+    "prob": 0.7058
+  },
+  "fraud_ring_association": {
+    "value": true,
+    "prob": 0.9093
+  },
+  "alert_clearing_house": {
+    "value": true,
+    "prob": 0.8652
+  },
+  "escalate_to_fiu": {
+    "value": true,
+    "prob": 0.8222
+  },
+  "confidence_score_tier": {
+    "value": "HIGH_CONFIDENCE_FRAUD",
+    "prob": 0.9786
+  },
+  "loss_prevention_priority": {
+    "value": "LOW_PRIORITY",
+    "prob": 0.9895
+  },
+  "account_takeover_suspected": {
+    "value": true,
+    "prob": 0.9763
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "sentiment": {
+    "value": "NEGATIVE",
+    "prob": 0.9802
+  },
+  "severity_tier": {
+    "value": "SEV_1_MAJOR",
+    "prob": 0.6953
+  },
+  "primary_department": {
+    "value": "SECURITY_OPS",
+    "prob": 0.6505
+  },
+  "secondary_department": {
+    "value": "NETWORK_OPS",
+    "prob": 0.6096
+  },
+  "sla_breach_risk": {
+    "value": true,
+    "prob": 0.9936
+  },
+  "requires_executive_escalation": {
+    "value": true,
+    "prob": 0.9974
+  },
+  "can_resolve_autonomously": {
+    "value": false,
+    "prob": 0.9294
+  },
+  "confidence_above_auto_threshold": {
+    "value": false,
+    "prob": 0.6225
+  },
+  "churn_risk_level": {
+    "value": "HIGH",
+    "prob": 0.9752
+  },
+  "refund_recommended": {
+    "value": true,
+    "prob": 0.9875
+  },
+  "refund_tier": {
+    "value": "FULL_MONTH_CREDIT",
+    "prob": 0.8813
+  },
+  "requires_legal_review": {
+    "value": true,
+    "prob": 0.9809
+  },
+  "security_incident": {
+    "value": true,
+    "prob": 0.9984
+  },
+  "compliance_breach": {
+    "value": true,
+    "prob": 0.9936
+  },
+  "customer_tenure_tier": {
+    "value": "GROWTH",
+    "prob": 0.5009
+  },
+  "root_cause_domain": {
+    "value": "API_GATEWAY",
+    "prob": 0.9964
+  },
+  "target_resolution_hours": {
+    "value": "12_HOURS",
+    "prob": 0.8821
+  },
+  "requires_phone_call": {
+    "value": true,
+    "prob": 0.9992
+  },
+  "notify_account_executive": {
+    "value": true,
+    "prob": 0.9795
+  },
+  "public_status_page_incident": {
+    "value": true,
+    "prob": 0.9536
+  },
+  "postmortem_required": {
+    "value": true,
+    "prob": 0.9946
+  },
+  "vendor_fault": {
+    "value": true,
+    "prob": 0.9425
+  },
+  "contract_penalty_applicable": {
+    "value": true,
+    "prob": 0.9588
+  },
+  "escalate_to_vp": {
+    "value": true,
+    "prob": 0.9939
+  },
+  "customer_sentiment_trend": {
+    "value": "WORSENING",
+    "prob": 0.9999
+  },
+  "suggested_action": {
+    "value": "SCHEDULE_EXEC_CALL",
+    "prob": 0.9942
+  },
+  "assigned_agent_tier": {
+    "value": "TIER_1",
+    "prob": 0.8463
+  },
+  "ticket_priority": {
+    "value": "P0_EMERGENCY",
+    "prob": 0.8344
+  }
+}

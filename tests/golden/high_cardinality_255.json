@@ -1,0 +1,18 @@
+{
+  "customs_category": {
+    "value": "CAT_199_Semiconductor_Lithography_Masks",
+    "prob": 0.0451
+  },
+  "export_license_required": {
+    "value": true,
+    "prob": 0.784
+  },
+  "is_dual_use_goods": {
+    "value": true,
+    "prob": 0.9962
+  },
+  "inspection_priority": {
+    "value": "HOLD_PHYSICAL_LAB_INSPECTION",
+    "prob": 0.9916
+  }
+}

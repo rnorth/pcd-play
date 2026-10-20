@@ -1,0 +1,18 @@
+{
+  "multiple_commands": {
+    "value": false,
+    "prob": 0.8032
+  },
+  "command_area": {
+    "value": "LIVING_ROOM",
+    "prob": 0.336
+  },
+  "command_verb": {
+    "value": "ON",
+    "prob": 0.9779
+  },
+  "command_domain": {
+    "value": "LIGHT",
+    "prob": 0.9618
+  }
+}

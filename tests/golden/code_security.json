@@ -1,0 +1,114 @@
+{
+  "is_vulnerability": {
+    "value": true,
+    "prob": 0.9952
+  },
+  "primary_cwe": {
+    "value": "CWE_89_SQL_INJECTION",
+    "prob": 0.3856
+  },
+  "secondary_cwe": {
+    "value": "CWE_1104_OUTDATED_COMPONENTS",
+    "prob": 0.8077
+  },
+  "severity_level": {
+    "value": "HIGH",
+    "prob": 0.6561
+  },
+  "block_pull_request": {
+    "value": true,
+    "prob": 0.9618
+  },
+  "quarantine_branch": {
+    "value": true,
+    "prob": 0.954
+  },
+  "credential_revocation_required": {
+    "value": true,
+    "prob": 0.9191
+  },
+  "requires_security_lead_signoff": {
+    "value": true,
+    "prob": 0.8093
+  },
+  "exploitability_in_production": {
+    "value": "REMOTE_UNAUTHENTICATED",
+    "prob": 0.5759
+  },
+  "blast_radius": {
+    "value": "FULL_AWS_ACCOUNT",
+    "prob": 0.8095
+  },
+  "auto_generate_fix": {
+    "value": true,
+    "prob": 0.5215
+  },
+  "remediation_effort": {
+    "value": "TRIVIAL_SECRETS_ROTATION",
+    "prob": 0.7126
+  },
+  "pci_dss_impact": {
+    "value": true,
+    "prob": 0.9758
+  },
+  "soc2_audit_flag": {
+    "value": true,
+    "prob": 0.9659
+  },
+  "hipaa_exposure_risk": {
+    "value": true,
+    "prob": 0.9957
+  },
+  "secret_type_detected": {
+    "value": "AWS_ROOT_KEY",
+    "prob": 0.9999
+  },
+  "target_environment": {
+    "value": "PRODUCTION_CLUSTER",
+    "prob": 1.0
+  },
+  "notify_ciso": {
+    "value": true,
+    "prob": 0.9005
+  },
+  "requires_immediate_patch": {
+    "value": true,
+    "prob": 0.9615
+  },
+  "jira_ticket_priority": {
+    "value": "P2_MAJOR",
+    "prob": 0.563
+  },
+  "assigned_team": {
+    "value": "APP_SEC_TEAM",
+    "prob": 0.8154
+  },
+  "false_positive_risk": {
+    "value": "HIGH",
+    "prob": 0.7153
+  },
+  "public_cve_match": {
+    "value": true,
+    "prob": 0.85
+  },
+  "auto_merge_allowed": {
+    "value": false,
+    "prob": 0.9493
+  },
+  "container_escape_risk": {
+    "value": true,
+    "prob": 0.9794
+  },
+  "data_exfiltration_risk": {
+    "value": "HIGH",
+    "prob": 0.9937
+  },
+  "author_trust_score": {
+    "value": "UNTRUSTED_EXTERNAL",
+    "prob": 0.8456
+  },
+  "security_gate_status": {
+    "value": "FAILED_BLOCKING",
+    "prob": 0.9998
+  }
+}
