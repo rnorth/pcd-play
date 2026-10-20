@@ -31,3 +31,9 @@ def test_unparseable_output():
     r = validate_naive_output('{"tier": "LOW",', SCHEMA)
     assert not r["is_valid_json"] and not r["schema_match"]
     assert r["parsed_json"] is None and r["parse_error"]
+
+
+def test_non_object_json_is_not_a_schema_match():
+    for raw in ("42", "[1, 2]", "null", '"x"'):
+        r = validate_naive_output(raw, SCHEMA)
+        assert r["is_valid_json"] and not r["schema_match"], raw

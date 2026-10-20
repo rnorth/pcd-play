@@ -12,8 +12,8 @@ from core.schema import StructuredSchema
 
 def validate_naive_output(raw_text: str, schema: StructuredSchema) -> Dict[str, Any]:
     """
-    Extracts the outermost {...} from raw_text and parses it. schema_match requires
-    valid JSON, every schema field present and every enum value one of its choices;
+    Extracts the outermost {...} from raw_text and parses it. schema_match requires a
+    JSON object, every schema field present and every enum value one of its choices;
     extra keys are allowed. Boolean and number/date/datetime values are not checked.
     """
     cleaned_json_str = raw_text.strip()
@@ -43,7 +43,7 @@ def validate_naive_output(raw_text: str, schema: StructuredSchema) -> Dict[str, 
 
     return {
         "is_valid_json": is_valid_json,
-        "schema_match": is_valid_json and not missing_keys and not invalid_enums,
+        "schema_match": isinstance(parsed_json, dict) and not missing_keys and not invalid_enums,
         "parsed_json": parsed_json,
         "parse_error": parse_error,
         "missing_keys": missing_keys,
