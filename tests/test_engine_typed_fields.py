@@ -1,3 +1,5 @@
+import pytest
+
 from conftest import load_preset
 from core.schema import StructuredSchema
 
@@ -44,19 +46,19 @@ def test_single_generative_field(engine):
 
 
 def test_collision_enum_alongside_number(engine, monkeypatch):
-    # The parallel catalogue omits types, so a boolean stand-in plus a forced null rule
-    # gives a byte-identical prompt through the pre-lockstep path: the enum/boolean
-    # results (incl. the collision-resolved command_area) must not change.
+    # A boolean stand-in whose description carries the "(number)" format hint, plus a
+    # forced null rule, gives a byte-identical prompt through the pre-lockstep path:
+    # the enum/boolean results (incl. the collision-resolved command_area) must not change.
     preset = load_preset("smart_home_voice")
 
-    def schema_with(extra_type):
+    def schema_with(extra_type, description):
         schema = dict(preset["schema"])
-        schema["brightness_pct"] = {"type": extra_type, "description": "Requested brightness percentage"}
+        schema["brightness_pct"] = {"type": extra_type, "description": description}
         return schema
 
-    typed = run(preset["context"], schema_with("number"))["parsed_json"]
+    typed = run(preset["context"], schema_with("number", "Requested brightness percentage"))["parsed_json"]
     monkeypatch.setattr(StructuredSchema, "has_generative", property(lambda self: True))
-    reference = run(preset["context"], schema_with("boolean"))["parsed_json"]
+    reference = run(preset["context"], schema_with("boolean", "Requested brightness percentage (number)"))["parsed_json"]
 
     for f in preset["schema"]:
         assert typed[f]["value"] == reference[f]["value"], f
@@ -71,3 +73,23 @@ def test_naive_does_not_flag_typed_fields(engine):
     result = run_naive_generation(preset["context"], StructuredSchema(preset["schema"]))
     flagged = {entry.split("=")[0] for entry in result["invalid_enums"]}
     assert not flagged & set(TYPED)
+
+
+def test_negative_number(engine):
+    result = run("The temperature fell to -5 degrees overnight.",
+                 {"temperature_c": {"type": "number", "description": "Lowest temperature in Celsius"}})
+    assert values(result) == {"temperature_c": -5}
+
+
+@pytest.mark.parametrize("context", ["Incident on 14/03/2026.", "On 14/03/2026 three people came."])
+def test_day_first_date(engine, context):
+    result = run(context, {"d": {"type": "date", "description": "Date of event"}})
+    assert values(result)["d"] == "2026-03-14"
+
+
+def test_parallel_field_prompts_handle_typed_fields():
+    from core.prompt_builder import build_parallel_field_prompts
+
+    preset = load_preset("insurance_claim")
+    prompts = build_parallel_field_prompts(preset["context"], StructuredSchema(preset["schema"]))
+    assert "YYYY-MM-DD" in dict((n, p) for n, _, p in prompts)["incident_date"]

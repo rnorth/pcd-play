@@ -9,6 +9,7 @@ import numpy as np
 
 
 GENERATIVE_TYPES = ("number", "date", "datetime")
+TYPE_FORMATS = {"number": "number", "date": "YYYY-MM-DD", "datetime": "YYYY-MM-DDTHH:MM:SS"}
 MAX_DECIMALS = 6
 
 
@@ -157,6 +158,9 @@ class StructuredSchema:
         lines = []
         for name, field in self.fields.items():
             desc = field.description.split('\n')[0].strip()
+            if field.is_generative:
+                # Without the format the model copies e.g. 14/03/2026 digit by digit.
+                desc = f"{desc} ({TYPE_FORMATS[field.field_type]})"
             lines.append(f'  "{name}": {desc}')
         return "\n".join(lines)
 

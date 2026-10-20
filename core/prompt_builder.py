@@ -4,7 +4,7 @@ vs. Parallel Constrained Decision Batches.
 """
 
 from typing import Dict, Any, List, Tuple
-from core.schema import StructuredSchema, FieldDefinition
+from core.schema import StructuredSchema, FieldDefinition, TYPE_FORMATS
 
 
 def build_naive_json_prompt(context: str, schema: StructuredSchema) -> str:
@@ -32,6 +32,8 @@ def build_parallel_field_prompts(context: str, schema: StructuredSchema) -> List
     for field_name, field_def in schema.fields.items():
         if field_def.field_type == "boolean":
             options_text = "true, false"
+        elif field_def.is_generative:
+            options_text = f"{TYPE_FORMATS[field_def.field_type]} or null"
         else:
             if len(field_def.choices) <= 20:
                 options_text = ", ".join(field_def.choices)

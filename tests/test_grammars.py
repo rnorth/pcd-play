@@ -12,9 +12,10 @@ def allowed(g, text):
 
 def test_number_integer():
     g = NumberGrammar(0)
-    assert allowed(g, "") == {NULL, " "}
-    assert allowed(g, " ") == D | {"-"}
+    assert allowed(g, "") == {NULL, " ", " -"}
+    assert allowed(g, " ") == D
     assert allowed(g, " -") == D
+    assert allowed(g, " -1") == D | {END}
     assert allowed(g, " 0") == {END}
     assert allowed(g, " 12") == D | {END}
     assert allowed(g, " " + "1" * 15) == {END}

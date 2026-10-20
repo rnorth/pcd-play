@@ -12,8 +12,9 @@ from typing import List, Optional, Union
 NULL = " null"
 END = ",\n"
 QUOTE = ' "'
+MINUS = " -"  # Qwen encodes '": -5' as '":', ' -', '5'
 DIGITS = [str(d) for d in range(10)]
-SYMBOLS = DIGITS + ["-", ".", "T", ":", QUOTE, " ", NULL, END]
+SYMBOLS = DIGITS + ["-", ".", "T", ":", QUOTE, " ", MINUS, NULL, END]
 
 MAX_INT_DIGITS = 15
 
@@ -36,17 +37,15 @@ def _digits(lo: int, hi: int) -> List[str]:
 
 
 class NumberGrammar:
-    """Emits ' ' then an optionally negative number such as 12 or -3.5, or NULL."""
+    """Emits ' ' then a number such as 12 or 3.5, ' -' then a negative one, or NULL."""
 
     def __init__(self, decimals: int):
         self.decimals = decimals
 
     def allowed(self, text: str) -> List[str]:
         if text == "":
-            return [NULL, " "]
+            return [NULL, " ", MINUS]
         body = text[1:]
-        if body == "":
-            return DIGITS + ["-"]
         int_part, dot, frac = body.lstrip("-").partition(".")
         if int_part == "":
             return DIGITS
