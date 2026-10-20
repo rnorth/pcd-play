@@ -75,3 +75,10 @@ def test_symbol_vocab_rejects_multi_token_symbol():
 
     with pytest.raises(ValueError, match="'5'"):
         build_symbol_vocab(FakeTokenizer())
+
+
+def test_negative_zero_parses_as_zero():
+    import math
+
+    assert str(NumberGrammar(0).parse(" -0")) == "0"
+    assert math.copysign(1, NumberGrammar(2).parse(" -0.00")) == 1

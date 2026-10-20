@@ -21,8 +21,10 @@ class FieldDefinition:
         self.description = description
         self.decimals = decimals
 
+        if decimals != 0 and self.field_type != "number":
+            raise ValueError(f"Field '{name}' has decimals but is not a number field.")
         if self.field_type in GENERATIVE_TYPES:
-            if not isinstance(decimals, int) or not 0 <= decimals <= MAX_DECIMALS:
+            if type(decimals) is not int or not 0 <= decimals <= MAX_DECIMALS:
                 raise ValueError(f"Field '{name}' decimals must be an integer 0-{MAX_DECIMALS} (got {decimals!r}).")
             self.choices = None
         elif self.field_type == "boolean":
@@ -94,6 +96,7 @@ class FieldDefinition:
             "description": self.description,
             "choices": self.choices,
             "cardinality": self.cardinality,
+            "decimals": self.decimals if self.field_type == "number" else None,
         }
 
 

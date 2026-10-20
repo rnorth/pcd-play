@@ -58,7 +58,8 @@ class NumberGrammar:
 
     def parse(self, text: str) -> Union[int, float]:
         body = text.strip()
-        return float(body) if self.decimals > 0 else int(body)
+        # + 0 turns -0.0 into 0.0 (int() already drops the sign of -0)
+        return float(body) + 0.0 if self.decimals > 0 else int(body)
 
 
 class DateGrammar:

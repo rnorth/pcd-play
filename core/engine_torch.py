@@ -145,7 +145,8 @@ def run_parallel_generation_torch(
     Evaluates all schema fields concurrently against a broadcast prefix KV-cache.
     """
     if schema.has_generative:
-        raise NotImplementedError("number/date/datetime fields need the MLX backend")
+        typed = [n for n, f in schema.fields.items() if f.is_generative]
+        raise NotImplementedError(f"number/date/datetime fields {typed} need the MLX backend")
     model, tokenizer, device = get_torch_engine()
     t0 = time.perf_counter()
 
