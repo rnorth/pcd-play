@@ -38,7 +38,7 @@ Parallel Constrained Decoding evaluates multi-field JSON schemas simultaneously 
 
 ## Performance Benchmarks (Apple Silicon M4 Max)
 
-Evaluated with `mlx-community/Qwen2.5-1.5B-Instruct-4bit` on macOS Sequoia:
+Evaluated with `mlx-community/Qwen2.5-1.5B-Instruct-4bit` on macOS Sequoia (enum/boolean schemas; typed fields add one pass per token, see [Typed Fields](#typed-fields-number-date-datetime)):
 
 | Scenario | Fields | Autoregressive Baseline | Parallel Constrained | Latency Speedup | Syntax Validity |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -68,7 +68,7 @@ Additionally, autoregressive decoding is susceptible to syntax degradation, fiel
 
 ### The Solution: Parallel Evaluation via KV-Cache Broadcasting
 
-In structured extraction and classification, field values belong to bounded candidate sets (booleans or categorical enums). Parallel Constrained Decoding exploits this property:
+In structured extraction and classification, field values belong to bounded candidate sets (booleans or categorical enums) or follow a fixed format (numbers, dates). Parallel Constrained Decoding exploits this property:
 
 ```
                           +---> [Field 1: "risk_level"] -------> Logit Slicing -> Top Choice
@@ -86,7 +86,8 @@ In structured extraction and classification, field values belong to bounded cand
 4. **Calibrated Softmax Probabilities**: Exact normalized probabilities are calculated over the candidate slice:
    $$P(c_i) = \frac{\exp(z_i / T)}{\sum_{j=1}^{C} \exp(z_j / T)}$$
 5. **Token Tree Disambiguation**: When candidate choices share multi-token prefix roots, the engine executes continuation steps using sliced cache states with zero memory reallocation.
-6. **Programmatic Assembly**: Output JSON is constructed directly from verified values, guaranteeing 100% valid syntax without JSON parsing errors.
+6. **Lockstep Typed Fields**: `number`/`date`/`datetime` fields then decode together, one token per batched forward pass, each step constrained by a format grammar.
+7. **Programmatic Assembly**: Output JSON is constructed directly from verified values, guaranteeing 100% valid syntax without JSON parsing errors.
 
 ---
 
@@ -117,7 +118,7 @@ pip install -r requirements.txt
 
 ### 1. Defining Schemas
 
-Schemas are defined using `StructuredSchema`. Each field specifies a `type` (`enum` or `boolean`), a `description` to guide model reasoning, and `choices` (for enum types, supporting up to 255 choices):
+Schemas are defined using `StructuredSchema`. Each field specifies a `type` (`enum`, `boolean`, or one of the [typed fields](#typed-fields-number-date-datetime) `number`/`date`/`datetime`), a `description` to guide model reasoning, and `choices` (for enum types, supporting up to 255 choices):
 
 ```python
 from core.schema import StructuredSchema, FieldDefinition
@@ -162,7 +163,7 @@ Alongside `boolean` and `enum`, the MLX backend supports multi-token typed field
 
 | Type | Value | Options |
 |---|---|---|
-| `number` | `int`, or `float` when `decimals > 0` (e.g. `2350.5`) | `decimals`: 0-6, default 0. Up to 15 integer digits, optional `-` |
+| `number` | `int`, or `float` when `decimals > 0` (e.g. `2350.5`) | `decimals`: 0-6, default 0. Up to 15 integer digits, optional `-`. Extra decimals in the text are truncated, not rounded |
 | `date` | ISO string `"2026-03-14"` | Day checked against the month and leap year |
 | `datetime` | ISO string `"2026-03-16T09:12:30"` | No time zone |
 
@@ -176,6 +177,7 @@ schema = StructuredSchema({
 - **Nullable:** each typed field may come back as `"value": None`. The system prompt gains `Use null for any attribute the text does not state.` (only when the schema has a typed field; enum/boolean-only prompts are unchanged).
 - **Telemetry:** `field_telemetry[f]` has `type`, `confidence` (product of the chosen tokens' probabilities, not a calibrated distribution) and `p_null` (probability of `null` at the first token).
 - **`p_null` catches gross absence only.** Text unrelated to the schema gives `p_null` near 1, but a field that is merely missing from otherwise relevant text (e.g. a police report date in a claim that never mentions police) can get `p_null` around 0.02 and a hallucinated value. Don't route on it without further checks.
+- **Passes:** `sequential_forward_passes` includes the lockstep passes.
 - **Latency:** typed fields decode together in lockstep, one batched forward pass per token, so cost tracks the longest field rather than the sum (a `datetime` is about 20 passes; ~95 ms per pass at 28 fields on an M1).
 - **Limits:** MLX backend and Qwen-style tokenizers (one token per digit) only; the PyTorch backend raises `NotImplementedError`.
 
@@ -355,7 +357,7 @@ Parallel Constrained vs. Autoregressive Generation Benchmark
 
 The engine is currently configured for `mlx-community/Qwen2.5-1.5B-Instruct-4bit`.
 
-Any decoder LLM supported by `mlx-lm` can be loaded by setting `MODEL_ID` in `core/engine.py`.
+Any decoder LLM supported by `mlx-lm` can be loaded by setting `MODEL_ID` in `core/engine_mlx.py`. Typed fields additionally need a tokenizer that encodes each digit (and a few separators) as a single token, as Qwen's does; otherwise the engine raises `ValueError` at load.
 
 ---
 

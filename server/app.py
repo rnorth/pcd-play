@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from core.schema import StructuredSchema
 from core.engine import (
+    USE_MLX,
     get_engine,
     run_naive_generation,
     stream_naive_generation,
@@ -61,7 +62,10 @@ def list_presets():
                 fpath = os.path.join(PRESETS_DIR, fname)
                 try:
                     with open(fpath, "r") as f:
-                        presets.append(json.load(f))
+                        preset = json.load(f)
+                    # number/date/datetime fields need the MLX backend
+                    if USE_MLX or not StructuredSchema(preset["schema"]).has_generative:
+                        presets.append(preset)
                 except Exception as e:
                     print(f"Error loading preset {fname}: {e}")
     return presets
