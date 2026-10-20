@@ -118,7 +118,7 @@ pip install -r requirements.txt
 
 ### 1. Defining Schemas
 
-Schemas are defined using `StructuredSchema`. Each field specifies a `type` (`enum`, `boolean`, or one of the [typed fields](#typed-fields-number-date-datetime) `number`/`date`/`datetime`), a `description` to guide model reasoning, and `choices` (for enum types, supporting up to 255 choices):
+Schemas are defined using `StructuredSchema`. Each field specifies a `type` (`enum`, `boolean`, or one of the [typed fields](#typed-fields-number-date-datetime) `number`/`date`/`datetime`), a `description` to guide model reasoning, and `choices` (for enum types, supporting up to 255 choices). A schema may have up to 64 fields:
 
 ```python
 from core.schema import StructuredSchema, FieldDefinition

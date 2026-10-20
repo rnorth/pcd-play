@@ -11,6 +11,8 @@ import numpy as np
 GENERATIVE_TYPES = ("number", "date", "datetime")
 TYPE_FORMATS = {"number": "number", "date": "YYYY-MM-DD", "datetime": "YYYY-MM-DDTHH:MM:SS"}
 MAX_DECIMALS = 6
+# Bounds GPU time per request; every field is a row in each batched forward pass.
+MAX_FIELDS = 64
 
 
 class FieldDefinition:
@@ -102,6 +104,8 @@ class FieldDefinition:
 
 class StructuredSchema:
     def __init__(self, schema_dict: Dict[str, Any], tokenizer=None):
+        if len(schema_dict) > MAX_FIELDS:
+            raise ValueError(f"Schema has {len(schema_dict)} fields; the maximum is {MAX_FIELDS}.")
         self.fields: Dict[str, FieldDefinition] = {}
         for field_name, spec in schema_dict.items():
             field_type = spec.get("type", "enum")

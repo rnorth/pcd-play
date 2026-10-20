@@ -120,7 +120,7 @@ print(f"Parsed JSON: {result['parsed_json']}")
 - **Quantization**: 4-bit AWQ (mlx-community format)
 - **Context Window**: 32,768 tokens
 - **Hardware Target**: Apple Silicon (M1, M2, M3, M4 series with unified memory)
-- **Supported Field Types**: Categorical Enums (up to 255 choices per field) and Booleans; on MLX, also nullable `number`/`date`/`datetime` fields decoded in lockstep (one extra batched pass per token, so not single-pass)
+- **Supported Field Types** (up to 64 fields per schema): Categorical Enums (up to 255 choices per field) and Booleans; on MLX, also nullable `number`/`date`/`datetime` fields decoded in lockstep (one extra batched pass per token, so not single-pass)
 
 ## Benchmark Summary
 

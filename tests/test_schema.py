@@ -71,3 +71,12 @@ def test_torch_error_names_typed_fields():
     schema = StructuredSchema({"when": {"type": "date"}, "ok": {"type": "boolean"}})
     with pytest.raises(NotImplementedError, match="'when'"):
         run_parallel_generation_torch("text", schema)
+
+
+def test_schema_field_cap():
+    from core.schema import MAX_FIELDS
+
+    assert MAX_FIELDS == 64
+    StructuredSchema({f"f{i}": {"type": "boolean"} for i in range(MAX_FIELDS)})
+    with pytest.raises(ValueError, match="64"):
+        StructuredSchema({f"f{i}": {"type": "boolean"} for i in range(MAX_FIELDS + 1)})
