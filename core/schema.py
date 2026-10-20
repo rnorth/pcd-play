@@ -1,19 +1,30 @@
 """
 Schema definitions, validation, and sub-vocabulary token mapping for parallel constrained decisions.
-Supports booleans and categorical enums with cardinality up to 255.
+Supports booleans, categorical enums with cardinality up to 255, and generative
+number/date/datetime fields decoded under a token grammar (see core/grammars.py).
 """
 
 from typing import Dict, Any, List, Tuple, Optional
 import numpy as np
 
 
+GENERATIVE_TYPES = ("number", "date", "datetime")
+MAX_DECIMALS = 6
+
+
 class FieldDefinition:
-    def __init__(self, name: str, field_type: str, description: str, choices: Optional[List[str]] = None):
+    def __init__(self, name: str, field_type: str, description: str, choices: Optional[List[str]] = None,
+                 decimals: int = 0):
         self.name = name
         self.field_type = field_type.lower()
         self.description = description
-        
-        if self.field_type == "boolean":
+        self.decimals = decimals
+
+        if self.field_type in GENERATIVE_TYPES:
+            if not isinstance(decimals, int) or not 0 <= decimals <= MAX_DECIMALS:
+                raise ValueError(f"Field '{name}' decimals must be an integer 0-{MAX_DECIMALS} (got {decimals!r}).")
+            self.choices = None
+        elif self.field_type == "boolean":
             self.choices = ["true", "false"]
         elif self.field_type in ("enum", "choice", "selection"):
             if not choices or len(choices) == 0:
@@ -25,13 +36,17 @@ class FieldDefinition:
                 raise ValueError(f"Field '{name}' has duplicate choices: {dupes}. Choices must be distinct.")
             self.choices = choices
         else:
-            raise ValueError(f"Unsupported field type '{field_type}'. Supported types: 'boolean' and 'enum'.")
+            raise ValueError(f"Unsupported field type '{field_type}'. Supported types: 'boolean', 'enum', 'number', 'date' and 'datetime'.")
 
         self.cached_candidate_token_ids: Optional[List[List[int]]] = None
 
     @property
-    def cardinality(self) -> int:
-        return len(self.choices)
+    def is_generative(self) -> bool:
+        return self.field_type in GENERATIVE_TYPES
+
+    @property
+    def cardinality(self) -> Optional[int]:
+        return None if self.is_generative else len(self.choices)
 
     def compile_candidate_tokens(self, tokenizer):
         """Pre-indexes and caches candidate token IDs so inference runs in microseconds."""
@@ -39,7 +54,9 @@ class FieldDefinition:
             return self.cached_candidate_token_ids
             
         candidate_tokens_per_choice = []
-        if self.field_type == "boolean":
+        if self.is_generative:
+            pass
+        elif self.field_type == "boolean":
             true_variants = ['true', ' true', 'True', ' True', 'TRUE', 'yes', ' yes']
             true_ids = []
             for v in true_variants:
@@ -90,7 +107,8 @@ class StructuredSchema:
                 name=field_name,
                 field_type=field_type,
                 description=description,
-                choices=choices
+                choices=choices,
+                decimals=spec.get("decimals", 0)
             )
             if tokenizer is not None:
                 fdef.compile_candidate_tokens(tokenizer)
@@ -109,12 +127,22 @@ class StructuredSchema:
     def __len__(self) -> int:
         return len(self.fields)
 
+    @property
+    def has_generative(self) -> bool:
+        return any(f.is_generative for f in self.fields.values())
+
     def to_json_schema_prompt_str(self) -> str:
         """Returns a clean TypeScript/JSON schema representation for naive LLM prompting."""
         lines = ["{"]
         for name, field in self.fields.items():
             if field.field_type == "boolean":
                 lines.append(f'  "{name}": boolean, // {field.description}')
+            elif field.field_type == "number":
+                lines.append(f'  "{name}": number | null, // {field.description}')
+            elif field.field_type == "date":
+                lines.append(f'  "{name}": "YYYY-MM-DD" | null, // {field.description}')
+            elif field.field_type == "datetime":
+                lines.append(f'  "{name}": "YYYY-MM-DDTHH:MM:SS" | null, // {field.description}')
             else:
                 choices_limit = 20 if len(field.choices) > 50 else len(field.choices)
                 choices_str = " | ".join(f'"{c}"' for c in field.choices[:choices_limit])
@@ -151,7 +179,13 @@ class StructuredSchema:
         seqs_per_field = []
 
         for fname, fdef in field_items:
-            if fdef.field_type == "boolean":
+            if fdef.is_generative:
+                # No trailing space: the grammar's first symbol (' "' or ' ') supplies it.
+                suffix = f'  "{fname}":'
+                cands = []
+                seqs = []
+                prefix = ""
+            elif fdef.field_type == "boolean":
                 suffix = f'  "{fname}": '
                 cands = [
                     tokenizer.encode("true", add_special_tokens=False)[0],

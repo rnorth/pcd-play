@@ -144,6 +144,8 @@ def run_parallel_generation_torch(
     Parallel Constrained Decision Engine running on PyTorch (CUDA / CPU).
     Evaluates all schema fields concurrently against a broadcast prefix KV-cache.
     """
+    if schema.has_generative:
+        raise NotImplementedError("number/date/datetime fields need the MLX backend")
     model, tokenizer, device = get_torch_engine()
     t0 = time.perf_counter()
 
