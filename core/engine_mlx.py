@@ -17,12 +17,14 @@ from core.prompt_builder import build_naive_json_prompt
 import mlx.core as mx
 from mlx_lm import load
 from mlx_lm.models.cache import make_prompt_cache, KVCache
-from core.lockstep import broadcast_batch_cache
+from core.lockstep import broadcast_batch_cache, lockstep_decode
+from core.grammars import GrammarRow, build_symbol_vocab, make_grammar
 
 MODEL_ID = "mlx-community/Qwen2.5-1.5B-Instruct-4bit"
 
 _model = None
 _tokenizer = None
+_symbol_vocab = None
 _gpu_lock = threading.Lock()
 
 
@@ -41,11 +43,12 @@ def gpu_locked_gen(fn):
 
 
 def get_engine():
-    global _model, _tokenizer
+    global _model, _tokenizer, _symbol_vocab
     if _model is None or _tokenizer is None:
         print(f"Loading {MODEL_ID} into Apple Silicon unified memory...")
         t0 = time.perf_counter()
         _model, _tokenizer = load(MODEL_ID)
+        _symbol_vocab = build_symbol_vocab(_tokenizer)
         print(f"Engine loaded in {time.perf_counter() - t0:.2f}s.")
         
         # GPU warmup: compile prefill and broadcast decode shaders ahead of time
@@ -145,7 +148,7 @@ def run_naive_generation(
         for fname, fdef in schema.fields.items():
             if fname not in parsed_json:
                 missing_keys.append(fname)
-            elif fdef.field_type != "boolean":
+            elif fdef.field_type != "boolean" and not fdef.is_generative:
                 val = str(parsed_json[fname])
                 if val not in fdef.choices:
                     invalid_enums.append(f"{fname}={val}")
@@ -253,7 +256,7 @@ def stream_naive_generation(
         for fname, fdef in schema.fields.items():
             if fname not in parsed_json:
                 missing_keys.append(fname)
-            elif fdef.field_type != "boolean":
+            elif fdef.field_type != "boolean" and not fdef.is_generative:
                 val = str(parsed_json[fname])
                 if val not in fdef.choices:
                     invalid_enums.append(f"{fname}={val}")
@@ -379,9 +382,10 @@ def run_parallel_generation(
     
     # 2. High-density semantic catalog for minimal prefill latency
     schema_str = schema.to_parallel_schema_str()
+    null_rule = "\nUse null for any attribute the text does not state." if schema.has_generative else ""
     base_prompt = (
         f"<|im_start|>system\n"
-        f"Classify JSON attributes:\n{schema_str}<|im_end|>\n"
+        f"Classify JSON attributes:\n{schema_str}{null_rule}<|im_end|>\n"
         f"<|im_start|>user\n"
         f"{context}<|im_end|>\n"
         f"<|im_start|>assistant\n{{\n"
@@ -411,7 +415,11 @@ def run_parallel_generation(
     deferred = []
     collision_passes = 0
     
+    gen = [i for i, (_, fdef) in enumerate(field_items) if fdef.is_generative]
+
     for i, (fname, fdef) in enumerate(field_items):
+        if fdef.is_generative:
+            continue  # decoded in lockstep below
         decision_idx = suffix_lengths[i] - 1
         field_logits = suffix_out[i, decision_idx, :]
         cand_tokens = cands_per_field[i]
@@ -473,9 +481,29 @@ def run_parallel_generation(
                 "cardinality": fdef.cardinality,
                 "top_choices": scored_choices[:5]
             }
-        # Restore declared field order after out-of-band resolution
-        parsed_json = {n: parsed_json[n] for n, _ in field_items}
-        field_telemetry = {n: field_telemetry[n] for n, _ in field_items}
+
+    lockstep_passes = 0
+    if gen:
+        # Collisions above sliced the un-rolled cache; only now move padding left.
+        for c in b_cache:
+            c.finalize()
+            c.filter(mx.array(gen))
+        first = mx.stack([suffix_out[i, suffix_lengths[i] - 1] for i in gen])
+        rows = [GrammarRow(make_grammar(field_items[i][1]), _symbol_vocab, temperature) for i in gen]
+        lockstep_passes = lockstep_decode(model, b_cache, first, rows)
+        for i, row in zip(gen, rows):
+            fname, fdef = field_items[i]
+            parsed_json[fname] = {"value": row.value, "prob": round(row.confidence, 4)}
+            field_telemetry[fname] = {
+                "value": row.value,
+                "type": fdef.field_type,
+                "confidence": round(row.confidence, 4),
+                "p_null": round(row.p_null, 4),
+            }
+
+    # Restore declared field order after out-of-band resolution
+    parsed_json = {n: parsed_json[n] for n, _ in field_items}
+    field_telemetry = {n: field_telemetry[n] for n, _ in field_items}
 
     total_elapsed_ms = (time.perf_counter() - t0) * 1000
 
@@ -485,7 +513,7 @@ def run_parallel_generation(
         "prefill_ms": round(t_prefill, 2),
         "suffix_eval_ms": round(t_suffix_eval, 2),
         "total_tokens_generated": 0,
-        "sequential_forward_passes": 1 + collision_passes,
+        "sequential_forward_passes": 1 + collision_passes + lockstep_passes,
         "is_valid_json": True,
         "schema_match": True,
         "parsed_json": parsed_json,

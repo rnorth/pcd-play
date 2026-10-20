@@ -23,6 +23,7 @@ This is a fork of https://huggingface.co/harshatheg/Qwen-2.5-1B-RLCD - all credi
 This personal fork includes a couple of tweaks which I'd intend to contribute back:
 * a fix for a problem when multiple possible enum values shared a common first token - this caused the first value to always be selected, even if incorrect
 * a tweak to the demo web UI allowing input context to be edited easily.
+* `number`, `date` and `datetime` field types, decoded for all fields in lockstep (MLX only - see [Typed Fields](#typed-fields-number-date-datetime)).
 
 ---
 
@@ -154,6 +155,31 @@ fields = {
     )
 }
 ```
+
+### Typed Fields: number, date, datetime
+
+Alongside `boolean` and `enum`, the MLX backend supports multi-token typed fields. Every value is grammar-constrained, so it always parses:
+
+| Type | Value | Options |
+|---|---|---|
+| `number` | `int`, or `float` when `decimals > 0` (e.g. `2350.5`) | `decimals`: 0-6, default 0. Up to 15 integer digits, optional `-` |
+| `date` | ISO string `"2026-03-14"` | Day checked against the month and leap year |
+| `datetime` | ISO string `"2026-03-16T09:12:30"` | No time zone |
+
+```python
+schema = StructuredSchema({
+    "repair_estimate_gbp": {"type": "number", "decimals": 2, "description": "Repair estimate in pounds"},
+    "incident_date": {"type": "date", "description": "Date the incident happened"},
+})
+```
+
+- **Nullable:** each typed field may come back as `"value": None`. The system prompt gains `Use null for any attribute the text does not state.` (only when the schema has a typed field; enum/boolean-only prompts are unchanged).
+- **Telemetry:** `field_telemetry[f]` has `type`, `confidence` (product of the chosen tokens' probabilities, not a calibrated distribution) and `p_null` (probability of `null` at the first token).
+- **`p_null` catches gross absence only.** Text unrelated to the schema gives `p_null` near 1, but a field that is merely missing from otherwise relevant text (e.g. a police report date in a claim that never mentions police) can get `p_null` around 0.02 and a hallucinated value. Don't route on it without further checks.
+- **Latency:** typed fields decode together in lockstep, one batched forward pass per token, so cost tracks the longest field rather than the sum (a `datetime` is about 20 passes; ~95 ms per pass at 28 fields on an M1).
+- **Limits:** MLX backend and Qwen-style tokenizers (one token per digit) only; the PyTorch backend raises `NotImplementedError`.
+
+Try the *Insurance Claim Intake* preset in the web visualizer.
 
 ### 2. Running Parallel Generation
 
@@ -299,12 +325,15 @@ Parallel Constrained vs. Autoregressive Generation Benchmark
 │   ├── __init__.py           # SDK package exports
 │   ├── engine.py             # Parallel constrained decoding & autoregressive engines
 │   ├── schema.py             # Schema definitions, metadata compiler & logit mapping
+│   ├── lockstep.py           # Batched KV cache + lockstep multi-token decoding (MLX)
+│   ├── grammars.py           # Token grammars for number/date/datetime fields
 │   ├── prompt_builder.py     # Prompt templates for prefill catalog and naive baseline
 │   └── benchmark.py          # Command-line benchmark runner
 ├── presets/
 │   ├── fintech_fraud.json    # Fraud detection scenario (4 fields)
 │   ├── code_security.json    # Vulnerability audit scenario (4 fields)
 │   ├── support_triage.json   # Enterprise ticket triage (28 fields)
+│   ├── insurance_claim.json  # Typed number/date/datetime extraction (6 fields)
 │   └── high_cardinality_255.json # 255-choice tariff classifier
 ├── server/
 │   ├── app.py                # FastAPI endpoints (/api/run-parallel, /api/stream-naive)
@@ -313,6 +342,7 @@ Parallel Constrained vs. Autoregressive Generation Benchmark
 │   ├── index.html            # Side-by-side comparison UI
 │   ├── app.js                # Frontend streaming & synchronized scrolling
 │   └── style.css             # UI styling
+├── tests/                    # pytest suite (pip install -r requirements-dev.txt; loads the model)
 ├── MODEL_CARD.md             # Hugging Face model card documentation
 ├── requirements.txt          # Python package requirements
 ├── run.sh                    # Startup script

@@ -1,0 +1,34 @@
+{
+  "id": "insurance_claim",
+  "title": "Insurance Claim Intake (6 Fields)",
+  "description": "Extracts typed values from a motor claim note: incident date, submission timestamp, repair estimate, passenger count, claim type and whether injuries were reported.",
+  "context": "Claim CLM-88213. Policyholder Dana Okafor reports a rear-end collision on 14 March 2026 at about 5:40pm on the A40. Repair estimate from Westway Motors: £2,350.50. Excess on the policy is £250. Two passengers, no injuries reported. Claim submitted online 2026-03-16 at 09:12:30.",
+  "schema": {
+    "incident_date": {
+      "type": "date",
+      "description": "Date the incident happened"
+    },
+    "submitted_at": {
+      "type": "datetime",
+      "description": "When the claim was submitted"
+    },
+    "repair_estimate_gbp": {
+      "type": "number",
+      "decimals": 2,
+      "description": "Repair estimate in pounds sterling"
+    },
+    "passenger_count": {
+      "type": "number",
+      "description": "Number of passengers in the policyholder's vehicle"
+    },
+    "claim_type": {
+      "type": "enum",
+      "description": "Kind of loss being claimed",
+      "choices": ["collision", "theft", "fire", "weather", "vandalism"]
+    },
+    "injuries_reported": {
+      "type": "boolean",
+      "description": "Whether anyone was reported injured"
+    }
+  }
+}

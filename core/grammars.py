@@ -7,7 +7,7 @@ logits at each step. `text` is the concatenation of chosen symbols, excluding EN
 """
 
 import calendar
-from typing import List, Union
+from typing import List, Optional, Union
 
 NULL = " null"
 END = ",\n"
@@ -113,3 +113,45 @@ def make_grammar(fdef) -> Union[NumberGrammar, DateGrammar]:
     if fdef.field_type == "number":
         return NumberGrammar(fdef.decimals)
     return DateGrammar(with_time=fdef.field_type == "datetime")
+
+
+class GrammarRow:
+    """
+    One field's row in lockstep_decode: picks the most likely allowed symbol each step.
+
+    Once finished, `value` holds the parsed value (None if NULL won), `confidence` the
+    product of the chosen symbols' probabilities and `p_null` the first step's NULL
+    probability.
+    """
+
+    def __init__(self, grammar, vocab: dict, temperature: float):
+        self.grammar = grammar
+        self.vocab = vocab
+        self.temperature = max(temperature, 1e-4)
+        self.text = ""
+        self.value = None
+        self.confidence = 1.0
+        self.p_null = 0.0
+
+    def step(self, logits) -> Optional[int]:
+        import mlx.core as mx
+
+        syms = self.grammar.allowed(self.text)
+        ids = mx.array([self.vocab[s] for s in syms])
+        probs = mx.softmax(logits[ids].astype(mx.float32) / self.temperature).tolist()
+        best = max(range(len(syms)), key=probs.__getitem__)
+        s = syms[best]
+        self.confidence *= probs[best]
+        if self.text == "":
+            self.p_null = probs[syms.index(NULL)]
+        if s == NULL:
+            self.value = None
+            return None
+        if s == END:
+            self.value = self.grammar.parse(self.text)
+            return None
+        self.text += s
+        if self.grammar.allowed(self.text) == []:
+            self.value = self.grammar.parse(self.text)
+            return None
+        return self.vocab[s]
