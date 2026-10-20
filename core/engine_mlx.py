@@ -8,7 +8,6 @@ import time
 import json
 import re
 import os
-import copy
 import platform
 import threading
 from typing import Dict, Any, Generator, Optional, List, Tuple
@@ -17,7 +16,8 @@ from core.prompt_builder import build_naive_json_prompt
 
 import mlx.core as mx
 from mlx_lm import load
-from mlx_lm.models.cache import make_prompt_cache
+from mlx_lm.models.cache import make_prompt_cache, KVCache
+from core.lockstep import broadcast_batch_cache
 
 MODEL_ID = "mlx-community/Qwen2.5-1.5B-Instruct-4bit"
 
@@ -56,14 +56,7 @@ def get_engine():
         mx.eval(w_logits)
         
         # Warmup batched broadcast suffix for up to 28 fields
-        b_cache = []
-        for c in w_cache:
-            nc = copy.copy(c)
-            if hasattr(c, "keys") and c.keys is not None:
-                nc.keys = mx.repeat(c.keys, 28, axis=0)
-            if hasattr(c, "values") and c.values is not None:
-                nc.values = mx.repeat(c.values, 28, axis=0)
-            b_cache.append(nc)
+        b_cache = broadcast_batch_cache(w_cache, [6] * 28)
         s_dummy = mx.zeros((28, 6), dtype=mx.int32)
         w_suf = _model(s_dummy, cache=b_cache)
         mx.eval(w_suf)
@@ -306,12 +299,13 @@ def _resolve_collision_mlx(model, b_cache, base_len, row, suffix_len, field_logi
     # continuation attends to this field's suffix and nothing after it.
     true_len = base_len + suffix_len
     f_cache = []
+    # Valid because the batch cache has not been finalize()d yet: padding is still
+    # on the right, after this row's suffix.
     for c in b_cache:
-        nc = copy.copy(c)
-        if hasattr(c, "keys") and c.keys is not None:
-            nc.keys = c.keys[row:row + 1, :, :true_len, :]
-            nc.values = c.values[row:row + 1, :, :true_len, :]
-            nc.offset = true_len
+        nc = KVCache()
+        nc.keys = c.keys[row:row + 1, :, :true_len, :]
+        nc.values = c.values[row:row + 1, :, :true_len, :]
+        nc.offset = true_len
         f_cache.append(nc)
 
     alive = list(range(len(seqs)))
@@ -402,17 +396,8 @@ def run_parallel_generation(
     t_prefill = (time.perf_counter() - t_pre0) * 1000
     
     # 3. Broadcast KV cache across batch dimension M with fused Metal evaluation
-    b_cache = []
-    to_eval = []
-    for c in cache:
-        nc = copy.copy(c)
-        if hasattr(c, "keys") and c.keys is not None:
-            nc.keys = mx.repeat(c.keys, M, axis=0)
-            nc.values = mx.repeat(c.values, M, axis=0)
-            to_eval.extend([nc.keys, nc.values])
-        b_cache.append(nc)
-    if to_eval:
-        mx.eval(*to_eval)
+    b_cache = broadcast_batch_cache(cache, suffix_lengths)
+    mx.eval(*[x for c in b_cache for x in (c.keys, c.values)])
         
     # 4. SINGLE BATCHED FORWARD PASS for all M suffixes!
     t_suf_start = time.perf_counter()
