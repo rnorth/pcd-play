@@ -13,7 +13,7 @@ from core.engine import (
 )
 from core.prompt_builder import (
     build_naive_json_prompt,
-    build_parallel_field_prompts,
+    build_parallel_prompt,
 )
 
 __all__ = [
@@ -24,6 +24,6 @@ __all__ = [
     "run_naive_generation",
     "stream_naive_generation",
     "build_naive_json_prompt",
-    "build_parallel_field_prompts",
+    "build_parallel_prompt",
     "run_rlcd_generation",
 ]

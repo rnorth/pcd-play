@@ -1,10 +1,8 @@
 """
-Prompt construction utilities for Autoregressive JSON Generation
-vs. Parallel Constrained Decision Batches.
+Prompt construction for the autoregressive JSON baseline and the parallel engine.
 """
 
-from typing import Dict, Any, List, Tuple
-from core.schema import StructuredSchema, FieldDefinition, TYPE_FORMATS
+from core.schema import StructuredSchema
 
 
 def build_naive_json_prompt(context: str, schema: StructuredSchema) -> str:
@@ -37,40 +35,3 @@ def build_parallel_prompt(context: str, schema: StructuredSchema) -> str:
         f"<|im_start|>assistant\n{{\n"
     )
 
-
-def build_parallel_field_prompts(context: str, schema: StructuredSchema) -> List[Tuple[str, FieldDefinition, str]]:
-    """
-    Builds discrete single-decision prompts for each field in the schema.
-    Returns a list of (field_name, field_def, prompt_text).
-    """
-    prompts = []
-    for field_name, field_def in schema.fields.items():
-        if field_def.field_type == "boolean":
-            options_text = "true, false"
-        elif field_def.is_generative:
-            options_text = f"{TYPE_FORMATS[field_def.field_type]} or null"
-        else:
-            if len(field_def.choices) <= 20:
-                options_text = ", ".join(field_def.choices)
-            else:
-                sample = ", ".join(field_def.choices[:8])
-                options_text = f"{sample}, ... [{len(field_def.choices)} total options]"
-
-        prompt = (
-            f"<|im_start|>system\n"
-            f"You are a calibrated decision engine. Select the single most accurate option based on evidence.<|im_end|>\n"
-            f"<|im_start|>user\n"
-            f"{context}\n\n"
-            f"Field: {field_name}\n"
-            f"Description: {field_def.description}\n"
-            f"Allowed choices: {options_text}\n"
-            f"Exact choice:<|im_end|>\n"
-            f"<|im_start|>assistant\n"
-        )
-        prompts.append((field_name, field_def, prompt))
-        
-    return prompts
-
-
-# Backward compatibility alias
-build_rlcd_field_prompts = build_parallel_field_prompts

@@ -86,10 +86,3 @@ def test_day_first_date(engine, context):
     result = run(context, {"d": {"type": "date", "description": "Date of event"}})
     assert values(result)["d"] == "2026-03-14"
 
-
-def test_parallel_field_prompts_handle_typed_fields():
-    from core.prompt_builder import build_parallel_field_prompts
-
-    preset = load_preset("insurance_claim")
-    prompts = build_parallel_field_prompts(preset["context"], StructuredSchema(preset["schema"]))
-    assert "YYYY-MM-DD" in dict((n, p) for n, _, p in prompts)["incident_date"]
