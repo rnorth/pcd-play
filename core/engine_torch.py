@@ -5,9 +5,7 @@ Optimized for Linux containers, Hugging Face Spaces (ZeroGPU & CUDA), and cloud 
 
 import os
 import time
-import json
 import copy
-import re
 import threading
 from typing import Dict, Any, Generator, Optional, List, Tuple
 
@@ -18,6 +16,7 @@ from transformers.cache_utils import DynamicCache
 
 from core.schema import StructuredSchema
 from core.prompt_builder import build_naive_json_prompt
+from core.naive_validation import validate_naive_output
 
 MODEL_ID = os.environ.get("MODEL_ID", "Qwen/Qwen2.5-1.5B-Instruct")
 
@@ -304,23 +303,7 @@ def run_naive_generation_torch(
 
     raw_text = tokenizer.decode(output_ids[0][prompt_tokens:], skip_special_tokens=True)
 
-    # Parse JSON
-    parsed_json = None
-    is_valid = False
-    try:
-        first_brace = raw_text.find("{")
-        last_brace = raw_text.rfind("}")
-        if first_brace != -1 and last_brace != -1:
-            cleaned = raw_text[first_brace:last_brace + 1]
-            parsed_json = json.loads(cleaned)
-            is_valid = True
-    except Exception:
-        pass
-
-    schema_match = False
-    if is_valid and isinstance(parsed_json, dict):
-        expected_keys = set(schema.get_field_names())
-        schema_match = (set(parsed_json.keys()) == expected_keys)
+    validation = validate_naive_output(raw_text, schema)
 
     return {
         "mode": "autoregressive_naive",
@@ -328,10 +311,8 @@ def run_naive_generation_torch(
         "total_tokens": gen_tokens,
         "tokens_per_second": round(tok_per_sec, 1),
         "sequential_forward_passes": gen_tokens,
-        "is_valid_json": is_valid,
-        "schema_match": schema_match,
         "raw_text": raw_text,
-        "parsed_json": parsed_json,
+        **validation,
         "device": device
     }
 
@@ -381,22 +362,7 @@ def stream_naive_generation_torch(
     thread.join()
     elapsed_ms = (time.perf_counter() - t0) * 1000
 
-    parsed_json = None
-    is_valid = False
-    try:
-        first_brace = full_text.find("{")
-        last_brace = full_text.rfind("}")
-        if first_brace != -1 and last_brace != -1:
-            cleaned = full_text[first_brace:last_brace + 1]
-            parsed_json = json.loads(cleaned)
-            is_valid = True
-    except Exception:
-        pass
-
-    schema_match = False
-    if is_valid and isinstance(parsed_json, dict):
-        expected_keys = set(schema.get_field_names())
-        schema_match = (set(parsed_json.keys()) == expected_keys)
+    validation = validate_naive_output(full_text, schema)
 
     result = {
         "mode": "autoregressive_naive",
@@ -404,10 +370,8 @@ def stream_naive_generation_torch(
         "total_tokens": tok_count,
         "tokens_per_second": round((tok_count / (elapsed_ms / 1000.0)) if elapsed_ms > 0 else 0.0, 1),
         "sequential_forward_passes": tok_count,
-        "is_valid_json": is_valid,
-        "schema_match": schema_match,
         "raw_text": full_text,
-        "parsed_json": parsed_json,
+        **validation,
         "device": device
     }
 

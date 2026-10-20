@@ -5,14 +5,13 @@ Runs locally on Apple Silicon via MLX with broadcast prefix KV-caching.
 """
 
 import time
-import json
-import re
 import os
 import platform
 import threading
 from typing import Dict, Any, Generator, Optional, List, Tuple
 from core.schema import StructuredSchema, map_candidate_tokens, extract_calibrated_probabilities
 from core.prompt_builder import build_naive_json_prompt
+from core.naive_validation import validate_naive_output
 
 import mlx.core as mx
 from mlx_lm import load
@@ -128,32 +127,7 @@ def run_naive_generation(
     token_count = len(generated_tokens)
     tok_per_sec = (token_count / (elapsed_ms / 1000)) if elapsed_ms > 0 else 0.0
 
-    cleaned_json_str = current_text.strip()
-    match = re.search(r"(\{.*\})", cleaned_json_str, re.DOTALL)
-    if match:
-        cleaned_json_str = match.group(1)
-
-    parsed_json = None
-    is_valid_json = False
-    parse_error = None
-    try:
-        parsed_json = json.loads(cleaned_json_str)
-        is_valid_json = True
-    except Exception as e:
-        parse_error = str(e)
-
-    missing_keys = []
-    invalid_enums = []
-    if is_valid_json and isinstance(parsed_json, dict):
-        for fname, fdef in schema.fields.items():
-            if fname not in parsed_json:
-                missing_keys.append(fname)
-            elif fdef.field_type != "boolean" and not fdef.is_generative:
-                val = str(parsed_json[fname])
-                if val not in fdef.choices:
-                    invalid_enums.append(f"{fname}={val}")
-
-    schema_match = is_valid_json and (len(missing_keys) == 0) and (len(invalid_enums) == 0)
+    validation = validate_naive_output(current_text, schema)
 
     return {
         "mode": "naive_autoregressive",
@@ -161,13 +135,8 @@ def run_naive_generation(
         "total_tokens": token_count,
         "tokens_per_second": round(tok_per_sec, 1),
         "sequential_forward_passes": token_count,
-        "is_valid_json": is_valid_json,
-        "schema_match": schema_match,
         "raw_text": current_text,
-        "parsed_json": parsed_json,
-        "parse_error": parse_error,
-        "missing_keys": missing_keys,
-        "invalid_enums": invalid_enums,
+        **validation,
         "has_calibrated_probabilities": False
     }
 
@@ -236,32 +205,7 @@ def stream_naive_generation(
     elapsed_ms = (time.perf_counter() - t0) * 1000
     tok_per_sec = (token_count / (elapsed_ms / 1000)) if elapsed_ms > 0 else 0.0
 
-    cleaned_json_str = current_text.strip()
-    match = re.search(r"(\{.*\})", cleaned_json_str, re.DOTALL)
-    if match:
-        cleaned_json_str = match.group(1)
-
-    parsed_json = None
-    is_valid_json = False
-    parse_error = None
-    try:
-        parsed_json = json.loads(cleaned_json_str)
-        is_valid_json = True
-    except Exception as e:
-        parse_error = str(e)
-
-    missing_keys = []
-    invalid_enums = []
-    if is_valid_json and isinstance(parsed_json, dict):
-        for fname, fdef in schema.fields.items():
-            if fname not in parsed_json:
-                missing_keys.append(fname)
-            elif fdef.field_type != "boolean" and not fdef.is_generative:
-                val = str(parsed_json[fname])
-                if val not in fdef.choices:
-                    invalid_enums.append(f"{fname}={val}")
-
-    schema_match = is_valid_json and (len(missing_keys) == 0) and (len(invalid_enums) == 0)
+    validation = validate_naive_output(current_text, schema)
 
     final_res = {
         "mode": "naive_autoregressive",
@@ -269,13 +213,8 @@ def stream_naive_generation(
         "total_tokens": token_count,
         "tokens_per_second": round(tok_per_sec, 1),
         "sequential_forward_passes": token_count,
-        "is_valid_json": is_valid_json,
-        "schema_match": schema_match,
         "raw_text": current_text,
-        "parsed_json": parsed_json,
-        "parse_error": parse_error,
-        "missing_keys": missing_keys,
-        "invalid_enums": invalid_enums,
+        **validation,
         "has_calibrated_probabilities": False
     }
     yield {
