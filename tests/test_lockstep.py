@@ -2,6 +2,7 @@ import mlx.core as mx
 from mlx_lm.models.cache import make_prompt_cache
 
 from conftest import load_preset
+from core.prompt_builder import build_parallel_prompt
 from core.schema import StructuredSchema
 
 SUFFIXES = ['  "a": "', '  "requires_executive_escalation": "', '  "x":']
@@ -19,11 +20,7 @@ class GreedyRow:
 
 def base_prompt():
     preset = load_preset("support_triage")
-    schema = StructuredSchema(preset["schema"])
-    return (
-        f"<|im_start|>system\nClassify JSON attributes:\n{schema.to_parallel_schema_str()}<|im_end|>\n"
-        f"<|im_start|>user\n{preset['context']}<|im_end|>\n<|im_start|>assistant\n{{\n"
-    )
+    return build_parallel_prompt(preset["context"], StructuredSchema(preset["schema"]))
 
 
 def reference_decode(model, prompt_toks, n):

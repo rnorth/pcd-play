@@ -10,7 +10,7 @@ import platform
 import threading
 from typing import Dict, Any, Generator, Optional, List, Tuple
 from core.schema import StructuredSchema, map_candidate_tokens, extract_calibrated_probabilities
-from core.prompt_builder import build_naive_json_prompt
+from core.prompt_builder import build_naive_json_prompt, build_parallel_prompt
 from core.naive_validation import validate_naive_output
 
 import mlx.core as mx
@@ -320,15 +320,7 @@ def run_parallel_generation(
     M = suffixes_batch.shape[0]
     
     # 2. High-density semantic catalog for minimal prefill latency
-    schema_str = schema.to_parallel_schema_str()
-    null_rule = "\nUse null for any attribute the text does not state." if schema.has_generative else ""
-    base_prompt = (
-        f"<|im_start|>system\n"
-        f"Classify JSON attributes:\n{schema_str}{null_rule}<|im_end|>\n"
-        f"<|im_start|>user\n"
-        f"{context}<|im_end|>\n"
-        f"<|im_start|>assistant\n{{\n"
-    )
+    base_prompt = build_parallel_prompt(context, schema)
     base_toks = tokenizer.encode(base_prompt)
     base_arr = mx.array(base_toks)[None]
     

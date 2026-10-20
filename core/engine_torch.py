@@ -15,7 +15,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStream
 from transformers.cache_utils import DynamicCache
 
 from core.schema import StructuredSchema
-from core.prompt_builder import build_naive_json_prompt
+from core.prompt_builder import build_naive_json_prompt, build_parallel_prompt
 from core.naive_validation import validate_naive_output
 
 MODEL_ID = os.environ.get("MODEL_ID", "Qwen/Qwen2.5-1.5B-Instruct")
@@ -160,14 +160,7 @@ def run_parallel_generation_torch(
     M = len(field_items)
 
     # 2. High-density semantic catalog prefill
-    schema_str = schema.to_parallel_schema_str()
-    base_prompt = (
-        f"<|im_start|>system\n"
-        f"Classify JSON attributes:\n{schema_str}<|im_end|>\n"
-        f"<|im_start|>user\n"
-        f"{context}<|im_end|>\n"
-        f"<|im_start|>assistant\n{{\n"
-    )
+    base_prompt = build_parallel_prompt(context, schema)
     base_toks = tokenizer.encode(base_prompt, return_tensors="pt").to(device)
 
     t_pre0 = time.perf_counter()
