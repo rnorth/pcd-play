@@ -79,3 +79,20 @@ def test_schema_field_cap():
     StructuredSchema({f"f{i}": {"type": "boolean"} for i in range(MAX_FIELDS)})
     with pytest.raises(ValueError, match=str(MAX_FIELDS)):
         StructuredSchema({f"f{i}": {"type": "boolean"} for i in range(MAX_FIELDS + 1)})
+
+
+def test_parallel_catalogue_lists_enum_choices():
+    schema = StructuredSchema({
+        "kind": {"type": "enum", "description": "Kind of loss", "choices": ["COLLISION", "FIRE"]},
+        "hurt": {"type": "boolean", "description": "Injuries"},
+    })
+    assert schema.to_parallel_schema_str() == (
+        '  "kind": Kind of loss [COLLISION | FIRE]\n'
+        '  "hurt": Injuries'
+    )
+
+
+def test_parallel_catalogue_omits_choices_of_large_enums():
+    choices = [f"C{i}" for i in range(51)]
+    schema = StructuredSchema({"code": {"type": "enum", "description": "Code", "choices": choices}})
+    assert schema.to_parallel_schema_str() == '  "code": Code'

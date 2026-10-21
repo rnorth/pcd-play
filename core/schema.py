@@ -13,6 +13,7 @@ TYPE_FORMATS = {"number": "number", "date": "YYYY-MM-DD", "datetime": "YYYY-MM-D
 MAX_DECIMALS = 6
 # Bounds GPU time per request; every field is a row in each batched forward pass.
 MAX_FIELDS = 64
+MAX_LISTED_CHOICES = 50
 
 
 class FieldDefinition:
@@ -168,6 +169,12 @@ class StructuredSchema:
             if field.is_generative:
                 # Without the format the model copies e.g. 14/03/2026 digit by digit.
                 desc = f"{desc} ({TYPE_FORMATS[field.field_type]})"
+            elif field.field_type == "enum" and len(field.choices) <= MAX_LISTED_CHOICES:
+                # Unlisted choices are scored on first token alone, so e.g. FIRE (F|IRE)
+                # beats COLLISION (COL|L|ISION) on a plain collision (issue #3). Larger
+                # enums stay unlisted: a partial list biases towards the choices shown,
+                # and listing all 255 cost 7 s of prefill without helping.
+                desc = f"{desc} [{' | '.join(field.choices)}]"
             lines.append(f'  "{name}": {desc}')
         return "\n".join(lines)
 

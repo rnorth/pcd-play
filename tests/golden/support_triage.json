@@ -1,114 +1,114 @@
 {
   "sentiment": {
-    "value": "NEGATIVE",
-    "prob": 0.9802
+    "value": "VERY_NEGATIVE",
+    "prob": 0.9407
   },
   "severity_tier": {
     "value": "SEV_1_MAJOR",
-    "prob": 0.6953
+    "prob": 0.3796
   },
   "primary_department": {
-    "value": "SECURITY_OPS",
-    "prob": 0.6505
+    "value": "INFRASTRUCTURE_SRE",
+    "prob": 0.5379
   },
   "secondary_department": {
     "value": "NETWORK_OPS",
-    "prob": 0.6096
+    "prob": 0.4161
   },
   "sla_breach_risk": {
     "value": true,
-    "prob": 0.9936
+    "prob": 0.9945
   },
   "requires_executive_escalation": {
     "value": true,
-    "prob": 0.9974
+    "prob": 0.9949
   },
   "can_resolve_autonomously": {
     "value": false,
-    "prob": 0.9294
+    "prob": 0.931
   },
   "confidence_above_auto_threshold": {
     "value": false,
-    "prob": 0.6225
+    "prob": 0.7217
   },
   "churn_risk_level": {
     "value": "HIGH",
-    "prob": 0.9752
+    "prob": 0.5094
   },
   "refund_recommended": {
     "value": true,
-    "prob": 0.9875
+    "prob": 0.9681
   },
   "refund_tier": {
     "value": "FULL_MONTH_CREDIT",
-    "prob": 0.8813
+    "prob": 0.6575
   },
   "requires_legal_review": {
     "value": true,
-    "prob": 0.9809
+    "prob": 0.9794
   },
   "security_incident": {
     "value": true,
-    "prob": 0.9984
+    "prob": 0.9994
   },
   "compliance_breach": {
     "value": true,
-    "prob": 0.9936
+    "prob": 0.997
   },
   "customer_tenure_tier": {
-    "value": "GROWTH",
-    "prob": 0.5009
+    "value": "ENTERPRISE_STRATEGIC",
+    "prob": 0.427
   },
   "root_cause_domain": {
     "value": "API_GATEWAY",
-    "prob": 0.9964
+    "prob": 0.9568
   },
   "target_resolution_hours": {
     "value": "12_HOURS",
-    "prob": 0.8821
+    "prob": 0.6782
   },
   "requires_phone_call": {
     "value": true,
-    "prob": 0.9992
+    "prob": 0.999
   },
   "notify_account_executive": {
     "value": true,
-    "prob": 0.9795
+    "prob": 0.9713
   },
   "public_status_page_incident": {
     "value": true,
-    "prob": 0.9536
+    "prob": 0.9504
   },
   "postmortem_required": {
     "value": true,
-    "prob": 0.9946
+    "prob": 0.9883
   },
   "vendor_fault": {
     "value": true,
-    "prob": 0.9425
+    "prob": 0.9112
   },
   "contract_penalty_applicable": {
     "value": true,
-    "prob": 0.9588
+    "prob": 0.9681
   },
   "escalate_to_vp": {
     "value": true,
-    "prob": 0.9939
+    "prob": 0.9895
   },
   "customer_sentiment_trend": {
     "value": "WORSENING",
-    "prob": 0.9999
+    "prob": 0.992
   },
   "suggested_action": {
-    "value": "SCHEDULE_EXEC_CALL",
-    "prob": 0.9942
+    "value": "PAGE_ONCALL_SRE",
+    "prob": 0.7605
   },
   "assigned_agent_tier": {
     "value": "TIER_1",
-    "prob": 0.8463
+    "prob": 0.5222
   },
   "ticket_priority": {
     "value": "P0_EMERGENCY",
-    "prob": 0.8344
+    "prob": 0.9866
   }
 }

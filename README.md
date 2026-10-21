@@ -23,6 +23,7 @@ This is a fork of https://huggingface.co/harshatheg/Qwen-2.5-1B-RLCD - all credi
 This personal fork includes a couple of tweaks which I'd intend to contribute back:
 * a fix for a problem when multiple possible enum values shared a common first token - this caused the first value to always be selected, even if incorrect
 * a tweak to the demo web UI allowing input context to be edited easily.
+* listing enum choices in the prompt, which fixes enum values with a likelier first token winning wrongly ([#3](https://github.com/rnorth/pcd-play/issues/3)).
 * `number`, `date` and `datetime` field types, decoded for all fields in lockstep (MLX only - see [Typed Fields](#typed-fields-number-date-datetime)).
 
 ---
@@ -80,7 +81,7 @@ In structured extraction and classification, field values belong to bounded cand
                      (All fields evaluated simultaneously)
 ```
 
-1. **Single Broadcast Prefill**: The context document and semantic schema descriptions are prefilled once into an MLX Key-Value (KV) cache.
+1. **Single Broadcast Prefill**: The context document and semantic schema descriptions are prefilled once into an MLX Key-Value (KV) cache. Enums with up to 50 choices list them in the descriptions; without the list, a choice whose first token is likelier (`FIRE` = `F`|`IRE`) beats the right one (`COLLISION` = `COL`|`L`|`ISION`) ([#3](https://github.com/rnorth/pcd-play/issues/3)).
 2. **KV-Cache Broadcasting**: The KV-cache is broadcast across all $M$ schema fields in parallel.
 3. **Sub-Vocabulary Logit Slicing**: For each field, only candidate token IDs belonging to valid schema choices are evaluated. The remaining vocabulary is masked.
 4. **Calibrated Softmax Probabilities**: Exact normalized probabilities are calculated over the candidate slice:
