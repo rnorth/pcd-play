@@ -1,114 +1,114 @@
 {
   "is_fraudulent": {
     "value": true,
-    "prob": 0.9536
+    "prob": 0.9656
   },
   "risk_tier": {
     "value": "HIGH",
-    "prob": 0.7441
+    "prob": 0.688
   },
   "recommended_action": {
-    "value": "MANUAL_REVIEW",
-    "prob": 0.5088
+    "value": "BLOCK_TRANSACTION",
+    "prob": 0.4621
   },
   "primary_anomaly": {
     "value": "TOR_EXIT_NODE",
-    "prob": 0.8875
+    "prob": 0.4412
   },
   "secondary_anomaly": {
-    "value": "CARD_NOT_PRESENT",
-    "prob": 0.9544
+    "value": "MULTIPLE_FAILED_LOGINS",
+    "prob": 0.5799
   },
   "requires_human_escalation": {
     "value": true,
-    "prob": 0.9543
+    "prob": 0.9268
   },
   "can_auto_block": {
     "value": true,
-    "prob": 0.6893
+    "prob": 0.502
   },
   "aml_sar_filing_required": {
     "value": true,
-    "prob": 0.8984
+    "prob": 0.7892
   },
   "fincen_flag_threshold": {
     "value": true,
-    "prob": 0.8895
+    "prob": 0.7326
   },
   "sanctions_screening_risk": {
-    "value": "HIGH_CONFIDENCE_MATCH",
-    "prob": 0.6387
+    "value": "POTENTIAL_MATCH",
+    "prob": 0.7441
   },
   "tor_exit_node_detected": {
     "value": true,
-    "prob": 0.9986
+    "prob": 0.9955
   },
   "device_fingerprint_mismatch": {
     "value": true,
-    "prob": 0.9709
+    "prob": 0.956
   },
   "velocity_score": {
-    "value": "NORMAL",
-    "prob": 0.4374
+    "value": "EXTREME_BURST",
+    "prob": 0.7498
   },
   "block_card_immediately": {
     "value": true,
-    "prob": 0.8256
+    "prob": 0.85
   },
   "freeze_online_banking": {
     "value": true,
-    "prob": 0.9508
+    "prob": 0.9681
   },
   "notify_cardholder_sms": {
     "value": true,
-    "prob": 0.8732
+    "prob": 0.8643
   },
   "notify_cardholder_email": {
     "value": true,
-    "prob": 0.7178
+    "prob": 0.5889
   },
   "requires_identity_verification": {
     "value": true,
-    "prob": 0.7994
+    "prob": 0.8056
   },
   "merchant_category_risk": {
     "value": "HIGH_RISK_CRYPTO",
-    "prob": 0.836
+    "prob": 0.5855
   },
   "chargeback_probability": {
-    "value": "LOW",
-    "prob": 0.7082
+    "value": "VERY_HIGH",
+    "prob": 0.8373
   },
   "counterparty_jurisdiction_risk": {
     "value": "TIER_3_HIGH",
-    "prob": 0.4374
+    "prob": 0.6168
   },
   "auto_reverse_transfer": {
     "value": true,
-    "prob": 0.7058
+    "prob": 0.6654
   },
   "fraud_ring_association": {
     "value": true,
-    "prob": 0.9093
+    "prob": 0.8032
   },
   "alert_clearing_house": {
     "value": true,
-    "prob": 0.8652
+    "prob": 0.8311
   },
   "escalate_to_fiu": {
     "value": true,
-    "prob": 0.8222
+    "prob": 0.848
   },
   "confidence_score_tier": {
     "value": "HIGH_CONFIDENCE_FRAUD",
-    "prob": 0.9786
+    "prob": 0.7688
   },
   "loss_prevention_priority": {
     "value": "LOW_PRIORITY",
-    "prob": 0.9895
+    "prob": 0.5819
   },
   "account_takeover_suspected": {
     "value": true,
-    "prob": 0.9763
+    "prob": 0.9757
   }
 }
